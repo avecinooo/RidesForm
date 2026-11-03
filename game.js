@@ -2,322 +2,247 @@
 let playerName = "";
 let puzzleStartTime = 0;
 let puzzleTimer = null;
-let discoveredClues = [];
-let puzzleComplete = false;
+let elapsedSeconds = 0;
 
-const puzzleObjects = {
-    frisbees: {
-        title: "Stack of Frisbees",
-        description: "Several discs are stacked on the shelf. You notice something written underneath the top disc.",
-        clue: "7",
-        clueText: "The number underneath the frisbee stack is 7."
-    },
+let tiles = [];
+let selectedTiles = [];
+let matchedPairs = 0;
+let moves = 0;
+let lockBoard = false;
 
-    cleats: {
-        title: "Old Cleats",
-        description: "A pair of muddy cleats has been left by the door. There is a faded number written inside the right shoe.",
-        clue: "4",
-        clueText: "The number inside the right cleat is 4."
-    },
-
-    bag: {
-        title: "Equipment Bag",
-        description: "You unzip an old equipment bag. Among the cones and jerseys, you find a tag with a number.",
-        clue: "2",
-        clueText: "The equipment bag tag has the number 2."
-    },
-
-    clipboard: {
-        title: "Team Clipboard",
-        description: "An old clipboard contains a tournament roster. On the back, someone has written a mysterious number.",
-        clue: "9",
-        clueText: "The back of the clipboard has the number 9."
-    },
-
-    whiteboard: {
-        title: "Whiteboard",
-        description: "Someone has left a message on the whiteboard. It reads:\n\n'First the flying disc, then the shoes. Next comes the bag, and finally the roster.'\n\nLooks like you've found the order of the combination."
-    }
-};
+const symbols = ["👟", "🎒", "🏆", "⚡", "🧢", "📋", "🔑", "🥏"];
 
 function startGame() {
-    const name = document.getElementById("playerName").value.trim();
+    const nameInput = document.getElementById("playerName");
 
-    if (!name) {
-        alert("Please enter your name first.");
+    playerName = nameInput.value.trim();
+
+    if (!playerName) {
+        alert("Enter your name before starting!");
         return;
     }
 
-    playerName = name;
-    localStorage.setItem("playerName", name);
-
-    discoveredClues = [];
-    puzzleComplete = false;
-
+    localStorage.setItem("playerName", playerName);
     loadRoomOne();
 }
 
 function loadRoomOne() {
-    const container = document.querySelector(".container");
+    clearInterval(puzzleTimer);
 
-    container.innerHTML = `
-        <div class="room-header">
-            <div class="top-label">VIRGINIA TECH ULTIMATE // ROOM 01</div>
-            <h1>THE EQUIPMENT CLOSET</h1>
-            <p class="subtitle">Find the combination. Unlock the cabinet.</p>
-        </div>
+    matchedPairs = 0;
+    moves = 0;
+    selectedTiles = [];
+    lockBoard = false;
+    elapsedSeconds = 0;
 
-        <div class="room-info">
-            <div>PLAYER: <span id="playerDisplay"></span></div>
-            <div>TIME: <span id="puzzleTimer">00:00</span></div>
-        </div>
+    // Create two copies of each symbol
+    tiles = [...symbols, ...symbols];
 
-        <div class="room-description">
-            The equipment closet is dark and unusually quiet.
-            A locked cabinet stands against the back wall.
-            There must be something in this room that can help you open it.
-            <br><br>
-            <strong>Investigate the objects to find four numbers.</strong>
-        </div>
-
-        <div class="room-scene">
-
-            <button class="room-object frisbees"
-                onclick="inspectObject('frisbees')">
-                <span>🥏</span>
-                <small>FRISBEES</small>
-            </button>
-
-            <button class="room-object cleats"
-                onclick="inspectObject('cleats')">
-                <span>👟</span>
-                <small>CLEATS</small>
-            </button>
-
-            <button class="room-object bag"
-                onclick="inspectObject('bag')">
-                <span>🎒</span>
-                <small>EQUIPMENT BAG</small>
-            </button>
-
-            <button class="room-object clipboard"
-                onclick="inspectObject('clipboard')">
-                <span>📋</span>
-                <small>CLIPBOARD</small>
-            </button>
-
-            <button class="room-object whiteboard"
-                onclick="inspectObject('whiteboard')">
-                <span>📝</span>
-                <small>WHITEBOARD</small>
-            </button>
-
-            <button class="room-object cabinet"
-                onclick="openCabinet()">
-                <span>🔒</span>
-                <small>LOCKED CABINET</small>
-            </button>
-
-        </div>
-
-        <div class="clue-section">
-            <h2>YOUR CLUE INVENTORY</h2>
-            <div class="clue-inventory" id="clueInventory">
-                <div class="clue-slot">?</div>
-                <div class="clue-slot">?</div>
-                <div class="clue-slot">?</div>
-                <div class="clue-slot">?</div>
-            </div>
-            <p class="inventory-note">Discover clues to fill your inventory.</p>
-        </div>
-
-        <div class="room-actions">
-            <button class="hint-button" onclick="showHint()">
-                REQUEST HINT
-            </button>
-        </div>
-
-        <div id="objectModal" class="modal hidden">
-            <div class="modal-content">
-                <button class="close-button" onclick="closeModal()">×</button>
-                <h2 id="objectTitle"></h2>
-                <p id="objectDescription"></p>
-                <div id="objectClue"></div>
-                <button onclick="closeModal()">BACK TO ROOM</button>
-            </div>
-        </div>
-
-        <div id="completionModal" class="modal hidden">
-            <div class="modal-content completion-content">
-                <div class="success-icon">✓</div>
-                <h2>CABINET UNLOCKED!</h2>
-                <p>You found the combination and escaped the first room.</p>
-                <div class="completion-time">
-                    YOUR TIME
-                    <h1 id="finalPuzzleTime">00:00</h1>
-                </div>
-                <p>One room down. Three more to go.</p>
-                <button onclick="continueGame()">CONTINUE</button>
-            </div>
-        </div>
-    `;
-
-    document.getElementById("playerDisplay").textContent = playerName;
+    // Shuffle the tiles
+    for (let i = tiles.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
+    }
 
     puzzleStartTime = Date.now();
 
-    clearInterval(puzzleTimer);
-
-    puzzleTimer = setInterval(updatePuzzleTimer, 250);
-}
-
-function updatePuzzleTimer() {
-    if (puzzleComplete) return;
-
-    const elapsed = Math.floor((Date.now() - puzzleStartTime) / 1000);
-
-    const minutes = String(Math.floor(elapsed / 60)).padStart(2, "0");
-    const seconds = String(elapsed % 60).padStart(2, "0");
-
-    const timer = document.getElementById("puzzleTimer");
-
-    if (timer) {
-        timer.textContent = `${minutes}:${seconds}`;
-    }
-}
-
-function inspectObject(objectId) {
-    const object = puzzleObjects[objectId];
-
-    document.getElementById("objectTitle").textContent = object.title;
-    document.getElementById("objectDescription").textContent = object.description;
-
-    const clueArea = document.getElementById("objectClue");
-
-    if (object.clue) {
-
-        if (!discoveredClues.includes(objectId)) {
-            discoveredClues.push(objectId);
-        }
-
-        clueArea.innerHTML = `
-            <div class="discovered-clue">
-                CLUE DISCOVERED: ${object.clue}
-            </div>
-        `;
-
-        updateInventory();
-
-    } else {
-        clueArea.innerHTML = `
-            <div class="discovered-clue">
-                ORDER CLUE FOUND!
-            </div>
-        `;
-    }
-
-    document.getElementById("objectModal").classList.remove("hidden");
-}
-
-function updateInventory() {
-    const inventory = document.getElementById("clueInventory");
-
-    const clueOrder = ["frisbees", "cleats", "bag", "clipboard"];
-
-    inventory.innerHTML = clueOrder.map(id => {
-        const found = discoveredClues.includes(id);
-
-        return `
-            <div class="clue-slot ${found ? "found" : ""}">
-                ${found ? puzzleObjects[id].clue : "?"}
-            </div>
-        `;
-    }).join("");
-}
-
-function closeModal() {
-    document.getElementById("objectModal").classList.add("hidden");
-}
-
-function openCabinet() {
-    document.getElementById("objectTitle").textContent = "LOCKED CABINET";
-
-    document.getElementById("objectDescription").textContent =
-        "The cabinet has a four-digit combination lock. Enter the code to unlock it.";
-
-    document.getElementById("objectClue").innerHTML = `
-        <div class="combination-lock">
-            <input class="code-digit" maxlength="1" inputmode="numeric">
-            <input class="code-digit" maxlength="1" inputmode="numeric">
-            <input class="code-digit" maxlength="1" inputmode="numeric">
-            <input class="code-digit" maxlength="1" inputmode="numeric">
+    document.querySelector(".container").innerHTML = `
+        <div class="room-header">
+            <h1>ROOM 01: THE EQUIPMENT CLOSET</h1>
+            <p>Find all eight matching pairs to unlock the exit.</p>
         </div>
-        <p id="lockMessage"></p>
-        <button onclick="checkCombination()">UNLOCK CABINET</button>
+
+        <div class="game-info">
+            <div>
+                <span class="info-label">PLAYER</span>
+                <strong>${escapeHTML(playerName)}</strong>
+            </div>
+
+            <div>
+                <span class="info-label">TIME</span>
+                <strong id="timer">00:00</strong>
+            </div>
+
+            <div>
+                <span class="info-label">MOVES</span>
+                <strong id="moves">0</strong>
+            </div>
+
+            <div>
+                <span class="info-label">MATCHES</span>
+                <strong id="matches">0 / 8</strong>
+            </div>
+        </div>
+
+        <div class="memory-instructions">
+            <h2>THE CHALLENGE</h2>
+            <p>
+                The equipment closet has been scrambled.
+                Flip over two frisbees at a time and find all
+                eight matching pairs. Remember where each
+                symbol is hidden. The fewer moves you make,
+                the better your score.
+            </p>
+        </div>
+
+        <div class="memory-board" id="memoryBoard"></div>
+
+        <div class="memory-footer">
+            <p id="gameMessage">Find your first matching pair.</p>
+        </div>
+
+        <div class="modal" id="completionModal">
+            <div class="modal-content">
+                <h2>ROOM 01 COMPLETE!</h2>
+                <p>You successfully matched every frisbee.</p>
+
+                <div class="completion-stats">
+                    <p>Time: <strong id="finalTime"></strong></p>
+                    <p>Moves: <strong id="finalMoves"></strong></p>
+                </div>
+
+                <p class="unlock-message">
+                    Your next room's access code is:
+                </p>
+
+                <div class="unlock-code">7429</div>
+
+                <button onclick="continueGame()">
+                    CONTINUE TO ROOM 02
+                </button>
+            </div>
+        </div>
     `;
 
-    document.getElementById("objectModal").classList.remove("hidden");
+    renderTiles();
 
-    document.querySelectorAll(".code-digit").forEach((input, index, inputs) => {
-        input.addEventListener("input", () => {
-            input.value = input.value.replace(/[^0-9]/g, "").slice(0, 1);
+    puzzleTimer = setInterval(updateTimer, 1000);
+}
 
-            if (input.value && index < 3) {
-                inputs[index + 1].focus();
-            }
-        });
+function escapeHTML(value) {
+    return String(value).replace(/[&<>"']/g, character => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    })[character]);
+}
+
+function renderTiles() {
+    const board = document.getElementById("memoryBoard");
+
+    board.innerHTML = "";
+
+    tiles.forEach((symbol, index) => {
+        const tile = document.createElement("button");
+
+        tile.className = "memory-tile";
+        tile.id = `tile-${index}`;
+        tile.type = "button";
+        tile.setAttribute("aria-label", `Hidden frisbee ${index + 1}`);
+        tile.innerHTML = `<span class="tile-back">🥏</span>
+                          <span class="tile-front">${symbol}</span>`;
+
+        tile.addEventListener("click", () => flipTile(index));
+
+        board.appendChild(tile);
     });
 }
 
-function checkCombination() {
-    const inputs = document.querySelectorAll(".code-digit");
+function flipTile(index) {
+    if (lockBoard) return;
+    if (selectedTiles.includes(index)) return;
 
-    const enteredCode = Array.from(inputs)
-        .map(input => input.value)
-        .join("");
+    const tile = document.getElementById(`tile-${index}`);
 
-    const message = document.getElementById("lockMessage");
+    if (tile.classList.contains("matched")) return;
 
-    if (enteredCode.length !== 4) {
-        message.textContent = "Enter all four digits.";
-        return;
+    tile.classList.add("flipped");
+    selectedTiles.push(index);
+
+    if (selectedTiles.length === 2) {
+        moves++;
+        document.getElementById("moves").textContent = moves;
+
+        checkMatch();
     }
+}
 
-    if (enteredCode === "7429") {
-        completePuzzle();
+function checkMatch() {
+    const [first, second] = selectedTiles;
+
+    if (tiles[first] === tiles[second]) {
+        // Correct match
+        document.getElementById(`tile-${first}`).classList.add("matched");
+        document.getElementById(`tile-${second}`).classList.add("matched");
+
+        matchedPairs++;
+
+        document.getElementById("matches").textContent =
+            `${matchedPairs} / 8`;
+
+        document.getElementById("gameMessage").textContent =
+            "Nice match! Keep going.";
+
+        selectedTiles = [];
+
+        if (matchedPairs === 8) {
+            completePuzzle();
+        }
+
     } else {
-        message.textContent = "Incorrect combination. Keep searching!";
-        inputs.forEach(input => input.value = "");
-        inputs[0].focus();
+        // Incorrect match: flip both tiles back over
+        lockBoard = true;
+
+        document.getElementById("gameMessage").textContent =
+            "Not a match. Remember their locations!";
+
+        setTimeout(() => {
+            document.getElementById(`tile-${first}`).classList.remove("flipped");
+            document.getElementById(`tile-${second}`).classList.remove("flipped");
+
+            selectedTiles = [];
+            lockBoard = false;
+
+            document.getElementById("gameMessage").textContent =
+                "Try another pair.";
+        }, 900);
     }
+}
+
+function updateTimer() {
+    elapsedSeconds = Math.floor((Date.now() - puzzleStartTime) / 1000);
+
+    const minutes = Math.floor(elapsedSeconds / 60);
+    const seconds = elapsedSeconds % 60;
+
+    document.getElementById("timer").textContent =
+        `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
 function completePuzzle() {
-    puzzleComplete = true;
     clearInterval(puzzleTimer);
 
-    const elapsed = Math.floor((Date.now() - puzzleStartTime) / 1000);
+    elapsedSeconds = Math.floor((Date.now() - puzzleStartTime) / 1000);
 
-    const minutes = String(Math.floor(elapsed / 60)).padStart(2, "0");
-    const seconds = String(elapsed % 60).padStart(2, "0");
+    localStorage.setItem("room1Time", elapsedSeconds);
+    localStorage.setItem("room1Moves", moves);
 
-    const formattedTime = `${minutes}:${seconds}`;
+    const minutes = Math.floor(elapsedSeconds / 60);
+    const seconds = elapsedSeconds % 60;
 
-    document.getElementById("objectModal").classList.add("hidden");
+    document.getElementById("finalTime").textContent =
+        `${minutes}:${String(seconds).padStart(2, "0")}`;
 
-    document.getElementById("finalPuzzleTime").textContent = formattedTime;
+    document.getElementById("finalMoves").textContent = moves;
 
-    document.getElementById("completionModal").classList.remove("hidden");
+    document.getElementById("gameMessage").textContent =
+        "All eight pairs found!";
 
-    localStorage.setItem("room1Time", elapsed);
-}
-
-function showHint() {
-    alert(
-        "HINT: Investigate every object. The whiteboard tells you the order in which to arrange the four numbers."
-    );
+    document.getElementById("completionModal").style.display = "flex";
 }
 
 function continueGame() {
-    alert("Room 02 is coming next!");
+    alert("Room 02 is coming next! Your code is 7429.");
 }
