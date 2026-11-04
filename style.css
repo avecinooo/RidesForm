@@ -1,3 +1,4 @@
+
 * {
     margin: 0;
     padding: 0;
@@ -5,273 +6,177 @@
 }
 
 body {
-    background: #101614;
-    color: #e8eee9;
-    font-family: Arial, sans-serif;
+    background: #101713;
+    color: white;
+    font-family: Arial, Helvetica, sans-serif;
     min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 25px;
+    padding: 30px;
 }
 
-.container {
+.menu-container {
     width: 100%;
-    max-width: 650px;
+    max-width: 750px;
     text-align: center;
-    border: 1px solid #405449;
-    padding: 45px 35px;
-    background: #18221d;
-    box-shadow: 0 0 35px rgba(67, 125, 83, 0.12);
 }
 
 .top-label {
-    color: #86ad91;
+    color: #a4d65e;
     letter-spacing: 4px;
     font-size: 12px;
-    margin-bottom: 30px;
+    font-weight: bold;
+    margin-bottom: 25px;
 }
 
 h1 {
-    font-size: clamp(38px, 8vw, 65px);
-    line-height: 1.05;
-    letter-spacing: 3px;
-    color: #f0f4ed;
-    margin-bottom: 15px;
+    font-size: clamp(48px, 9vw, 85px);
+    line-height: 0.95;
+    font-weight: 900;
+    letter-spacing: -3px;
+}
+
+h1 span {
+    color: #a4d65e;
 }
 
 .subtitle {
-    color: #91a79a;
-    letter-spacing: 2px;
-    margin-bottom: 40px;
+    color: #b5c0b8;
+    font-size: 17px;
+    margin-top: 22px;
 }
 
-.mission-box {
-    background: #202e26;
-    border: 1px solid #405449;
-    padding: 25px;
-    text-align: left;
-    margin-bottom: 35px;
+.divider {
+    width: 70px;
+    height: 4px;
+    background: #a4d65e;
+    margin: 30px auto;
+}
+
+.story {
+    max-width: 530px;
+    margin: 0 auto 35px;
+    color: #c5cec7;
     line-height: 1.7;
+    font-size: 15px;
 }
 
-.mission-box h2 {
-    color: #91c29e;
-    font-size: 16px;
-    letter-spacing: 2px;
-    margin-bottom: 15px;
+.room-preview {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin: 0 auto 35px;
+    max-width: 550px;
 }
 
-.mission-box p {
-    margin-bottom: 12px;
-    color: #c2cec5;
+.room {
+    background: #1b2820;
+    border: 1px solid #344538;
+    padding: 17px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 1px;
 }
 
-.player-entry {
+.room-number {
+    display: block;
+    color: #a4d65e;
+    font-size: 19px;
+    margin-bottom: 7px;
+}
+
+.button-container {
     display: flex;
     flex-direction: column;
-    gap: 15px;
-}
-
-.player-entry label {
-    font-size: 12px;
-    letter-spacing: 2px;
-    color: #91c29e;
-}
-
-input {
-    padding: 15px;
-    background: #101614;
-    border: 1px solid #536b5a;
-    color: white;
-    font-size: 16px;
-    outline: none;
+    gap: 12px;
+    max-width: 300px;
+    margin: auto;
 }
 
 button {
     padding: 16px;
-    background: #426b4e;
-    color: white;
     border: none;
+    border-radius: 6px;
+    background: #a4d65e;
+    color: #101713;
     font-size: 14px;
-    font-weight: bold;
+    font-weight: 900;
     letter-spacing: 2px;
     cursor: pointer;
     transition: 0.2s;
 }
 
 button:hover {
-    background: #598968;
+    background: #c1ed7d;
     transform: translateY(-2px);
 }
 
-.footer {
-    margin-top: 40px;
+.secondary-button {
+    background: transparent;
+    border: 1px solid #71816f;
+    color: white;
+}
+
+.secondary-button:hover {
+    background: #26372b;
+}
+
+.footer-text {
+    color: #71816f;
     font-size: 10px;
     letter-spacing: 3px;
-    color: #64786a;
+    margin-top: 35px;
 }
 
+/* Instructions popup */
 
-/* MEMORY GAME */
-
-.memory-instructions {
-    background: #172536;
-    border: 1px solid #344b63;
-    border-radius: 12px;
-    padding: 18px;
-    margin: 24px 0;
-    text-align: left;
-}
-
-.memory-instructions h2 {
-    margin-top: 0;
-    color: #e6b94c;
-    font-size: 18px;
-}
-
-.memory-instructions p {
-    color: #d1d9e2;
-    line-height: 1.6;
-    margin-bottom: 0;
-}
-
-.memory-board {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 12px;
-    max-width: 540px;
-    margin: 25px auto;
-    perspective: 1000px;
-}
-
-.memory-tile {
-    position: relative;
-    aspect-ratio: 1 / 1;
-    border: 2px solid #607b98;
-    border-radius: 12px;
-    background: #263f5c;
-    color: white;
-    cursor: pointer;
-    font-size: clamp(25px, 5vw, 42px);
-    transition: transform 0.2s, background 0.2s;
-    transform-style: preserve-3d;
-    padding: 0;
-}
-
-.memory-tile:hover:not(.matched) {
-    background: #365878;
-    transform: translateY(-3px);
-}
-
-.tile-back,
-.tile-front {
-    position: absolute;
+.modal {
+    position: fixed;
     inset: 0;
+    background: rgba(0, 0, 0, 0.8);
     display: flex;
     justify-content: center;
     align-items: center;
-    backface-visibility: hidden;
-    transition: transform 0.35s;
-    border-radius: 9px;
+    padding: 20px;
 }
 
-.tile-back {
-    transform: rotateY(0deg);
-}
-
-.tile-front {
-    background: #e9edf2;
-    color: #172536;
-    transform: rotateY(180deg);
-}
-
-.memory-tile.flipped .tile-back,
-.memory-tile.matched .tile-back {
-    transform: rotateY(180deg);
-}
-
-.memory-tile.flipped .tile-front,
-.memory-tile.matched .tile-front {
-    transform: rotateY(0deg);
-}
-
-.memory-tile.matched {
-    border-color: #56b887;
-    background: #1c5945;
-    cursor: default;
-    opacity: 0.85;
-}
-
-.memory-tile.matched .tile-front {
-    background: #c8f0d9;
-}
-
-.memory-footer {
-    margin: 20px 0;
-    color: #e6b94c;
-    font-weight: bold;
-    min-height: 30px;
-}
-
-.game-info {
-    display: flex;
-    justify-content: space-around;
-    flex-wrap: wrap;
-    gap: 15px;
-    background: #172536;
-    padding: 18px;
-    border-radius: 12px;
-    margin: 20px 0;
-}
-
-.game-info div {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.info-label {
-    color: #9aafc4;
-    font-size: 11px;
-    letter-spacing: 1px;
-}
-
-.game-info strong {
-    font-size: 20px;
-    color: white;
-}
-
-.completion-stats {
-    background: #172536;
+.modal-content {
+    background: #1b2820;
+    border: 1px solid #a4d65e;
     border-radius: 10px;
-    padding: 12px;
-    margin: 20px 0;
+    padding: 35px;
+    max-width: 450px;
+    text-align: center;
 }
 
-.unlock-message {
-    margin-top: 20px;
+.modal-content h2 {
+    color: #a4d65e;
+    margin-bottom: 20px;
 }
 
-.unlock-code {
-    font-size: 42px;
-    font-weight: bold;
-    letter-spacing: 12px;
-    color: #e6b94c;
-    margin: 15px 0 25px;
+.modal-content p {
+    color: #c5cec7;
+    line-height: 1.6;
+    margin-bottom: 15px;
 }
 
-@media (max-width: 550px) {
-    .memory-board {
-        gap: 7px;
+.modal-content button {
+    width: 100%;
+    margin-top: 10px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+@media (max-width: 500px) {
+    .room-preview {
+        grid-template-columns: 1fr;
     }
 
-    .memory-tile {
-        border-radius: 8px;
-    }
-
-    .game-info {
-        gap: 18px;
+    h1 {
+        letter-spacing: -2px;
     }
 }
-
