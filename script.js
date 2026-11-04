@@ -1,4 +1,3 @@
-
 const roomNames = {
     1: "DISC MEMORY",
     2: "SIMON SAYS",
@@ -77,6 +76,8 @@ function enterRoom(roomNumber) {
     // Load the correct game
     if (roomNumber === 1) {
         initializeDiscMemory();
+    } else if (roomNumber === 2) {
+        initializeSimonSays();
     } else {
         document.getElementById("room-content").innerHTML =
             "<p>This challenge is coming soon!</p>";
@@ -142,7 +143,7 @@ function initializeDiscMemory() {
     const memoryGrid = document.getElementById("memory-grid");
 
     // Generate all 16 cards
-    cards.forEach((word, index) => {
+    cards.forEach((word) => {
 
         const card = document.createElement("button");
 
@@ -270,9 +271,401 @@ function initializeDiscMemory() {
             </div>
         `;
 
-        // Automatically stop the timer and save the score
         completeRoom();
     }
+}
+
+
+// ==========================================
+// ROOM 2: SIMON SAYS
+// ==========================================
+
+function initializeSimonSays() {
+
+    const actions = [
+        "CUT",
+        "DUMP",
+        "SWING",
+        "HUCK"
+    ];
+
+    let sequence = [];
+    let currentRound = 1;
+    let playerPosition = 0;
+
+    let mistakes = 0;
+    let acceptingInput = false;
+    let gameStarted = false;
+    let awaitingNextRound = false;
+
+    let playbackTimeouts = [];
+
+    const roomContent = document.getElementById("room-content");
+
+    // CREATE GAME LAYOUT
+    roomContent.innerHTML = `
+        <div class="simon-panel">
+
+            <div class="simon-round" id="simon-round">
+                ROUND 1 OF 7
+            </div>
+
+            <p class="simon-instructions">
+                Watch the sequence of ultimate actions.
+                Repeat the sequence in the exact same order.
+                Each round adds one new action!
+            </p>
+
+            <div class="simon-status" id="simon-status">
+                Press START to begin.
+            </div>
+
+            <div class="simon-grid">
+
+                <button
+                    class="simon-button"
+                    data-action="CUT"
+                    disabled
+                >
+                    CUT
+                </button>
+
+                <button
+                    class="simon-button"
+                    data-action="DUMP"
+                    disabled
+                >
+                    DUMP
+                </button>
+
+                <button
+                    class="simon-button"
+                    data-action="SWING"
+                    disabled
+                >
+                    SWING
+                </button>
+
+                <button
+                    class="simon-button"
+                    data-action="HUCK"
+                    disabled
+                >
+                    HUCK
+                </button>
+
+            </div>
+
+            <div class="simon-progress">
+                PROGRESS:
+                <strong id="simon-progress">0 / 7 ROUNDS</strong>
+            </div>
+
+            <div class="simon-progress">
+                MISTAKES:
+                <strong id="simon-mistakes">0</strong>
+            </div>
+
+            <button class="simon-start" id="simon-start">
+                START
+            </button>
+
+        </div>
+    `;
+
+    const simonButtons = document.querySelectorAll(".simon-button");
+    const startButton = document.getElementById("simon-start");
+
+
+    // UPDATE STATUS MESSAGE
+    function setStatus(message) {
+        document.getElementById("simon-status").textContent =
+            message;
+    }
+
+
+    // UPDATE BUTTON AVAILABILITY
+    function setButtonsEnabled(enabled) {
+
+        simonButtons.forEach(button => {
+            button.disabled = !enabled;
+        });
+    }
+
+
+    // CLEAR ALL PENDING PLAYBACK
+    function clearPlayback() {
+
+        playbackTimeouts.forEach(timeout => {
+            clearTimeout(timeout);
+        });
+
+        playbackTimeouts = [];
+
+        simonButtons.forEach(button => {
+            button.classList.remove("lit");
+        });
+    }
+
+
+    // FLASH AN ACTION BUTTON
+    function flashAction(action, duration) {
+
+        const button = document.querySelector(
+            `.simon-button[data-action="${action}"]`
+        );
+
+        if (!button) return;
+
+        button.classList.add("lit");
+
+        const timeout = setTimeout(() => {
+            button.classList.remove("lit");
+        }, duration);
+
+        playbackTimeouts.push(timeout);
+    }
+
+
+    // ADD A RANDOM ACTION TO THE SEQUENCE
+    function addToSequence() {
+
+        const randomAction =
+            actions[Math.floor(Math.random() * actions.length)];
+
+        sequence.push(randomAction);
+    }
+
+
+    // PLAY THE SEQUENCE
+    function playSequence() {
+
+        clearPlayback();
+
+        acceptingInput = false;
+        playerPosition = 0;
+
+        setButtonsEnabled(false);
+
+        startButton.disabled = true;
+
+        setStatus("WATCH THE SEQUENCE...");
+
+        document.getElementById("simon-round").textContent =
+            `ROUND ${currentRound} OF 7`;
+
+        // Later rounds play faster
+        const flashDuration =
+            Math.max(260, 650 - currentRound * 45);
+
+        const gapDuration =
+            Math.max(140, 260 - currentRound * 15);
+
+        let index = 0;
+
+        function playNextAction() {
+
+            if (index >= sequence.length) {
+
+                // Sequence has finished
+                const finishTimeout = setTimeout(() => {
+
+                    acceptingInput = true;
+
+                    setButtonsEnabled(true);
+
+                    startButton.disabled = false;
+                    startButton.textContent = "REPLAY SEQUENCE";
+
+                    setStatus("YOUR TURN! REPEAT THE SEQUENCE.");
+
+                }, 400);
+
+                playbackTimeouts.push(finishTimeout);
+
+                return;
+            }
+
+            const action = sequence[index];
+
+            flashAction(action, flashDuration);
+
+            index++;
+
+            const nextTimeout = setTimeout(() => {
+                playNextAction();
+            }, flashDuration + gapDuration);
+
+            playbackTimeouts.push(nextTimeout);
+        }
+
+        // Small delay before sequence begins
+        const initialTimeout = setTimeout(() => {
+            playNextAction();
+        }, 600);
+
+        playbackTimeouts.push(initialTimeout);
+    }
+
+
+    // HANDLE PLAYER CLICK
+    function handlePlayerInput(action) {
+
+        if (!acceptingInput) return;
+
+        if (currentRoom !== 2) return;
+
+        const expectedAction = sequence[playerPosition];
+
+        // Correct action
+        if (action === expectedAction) {
+
+            flashAction(action, 180);
+
+            playerPosition++;
+
+            // Player completed the current sequence
+            if (playerPosition === sequence.length) {
+
+                acceptingInput = false;
+                setButtonsEnabled(false);
+
+                document.getElementById("simon-progress").textContent =
+                    `${currentRound} / 7 ROUNDS`;
+
+                // Final round completed
+                if (currentRound === 7) {
+
+                    finishSimonSays();
+
+                } else {
+
+                    awaitingNextRound = true;
+
+                    setStatus(
+                        `ROUND ${currentRound} COMPLETE!`
+                    );
+
+                    startButton.disabled = false;
+                    startButton.textContent = "NEXT ROUND";
+                }
+            }
+
+        } else {
+
+            // Incorrect action
+            mistakes++;
+
+            document.getElementById("simon-mistakes").textContent =
+                mistakes;
+
+            acceptingInput = false;
+
+            setButtonsEnabled(false);
+
+            startButton.disabled = true;
+
+            setStatus("INCORRECT! WATCH THE SEQUENCE AGAIN.");
+
+            // Replay the SAME sequence.
+            // Completed rounds are not lost.
+            const retryTimeout = setTimeout(() => {
+                playSequence();
+            }, 900);
+
+            playbackTimeouts.push(retryTimeout);
+        }
+    }
+
+
+    // FINISH SIMON SAYS
+    function finishSimonSays() {
+
+        acceptingInput = false;
+
+        setButtonsEnabled(false);
+
+        clearPlayback();
+
+        startButton.disabled = true;
+
+        const elapsed = Date.now() - roomStartTime;
+
+        roomContent.innerHTML = `
+            <div class="memory-complete">
+                <h2>ROOM 02 COMPLETE!</h2>
+
+                <p>You successfully completed all seven rounds.</p>
+
+                <p>Mistakes: ${mistakes}</p>
+
+                <p>Returning to room selection...</p>
+            </div>
+        `;
+
+        completeRoom(elapsed);
+    }
+
+
+    // CONNECT THE FOUR ACTION BUTTONS
+    simonButtons.forEach(button => {
+
+        button.addEventListener("click", () => {
+
+            const action = button.dataset.action;
+
+            handlePlayerInput(action);
+
+        });
+
+    });
+
+
+    // START / REPLAY / NEXT ROUND BUTTON
+    startButton.addEventListener("click", () => {
+
+        if (startButton.disabled) return;
+
+        // First round
+        if (!gameStarted) {
+
+            gameStarted = true;
+
+            addToSequence();
+
+            startButton.disabled = true;
+
+            playSequence();
+
+            return;
+        }
+
+        // Move to the next round
+        if (awaitingNextRound) {
+
+            awaitingNextRound = false;
+
+            currentRound++;
+
+            addToSequence();
+
+            startButton.disabled = true;
+            startButton.textContent = "WATCHING...";
+
+            playSequence();
+
+            return;
+        }
+
+        // Replay the current sequence
+        if (acceptingInput) {
+
+            playSequence();
+
+        }
+
+    });
+
 }
 
 
@@ -280,11 +673,13 @@ function initializeDiscMemory() {
 // COMPLETE A ROOM
 // ==========================================
 
-function completeRoom() {
+function completeRoom(completionTime) {
 
     if (currentRoom === null) return;
 
-    const elapsed = Date.now() - roomStartTime;
+    const elapsed = completionTime !== undefined
+        ? completionTime
+        : Date.now() - roomStartTime;
 
     // Save room time
     roomTimes[currentRoom] = elapsed;
@@ -300,7 +695,11 @@ function completeRoom() {
     roomStartTime = null;
 
     updateMenu();
-    returnToMenu();
+
+    // Give the completion message time to display
+    setTimeout(() => {
+        returnToMenu();
+    }, 700);
 }
 
 
