@@ -6,6 +6,7 @@ const roomNames = {
     4: "THE CHASE"
 };
 
+// Load saved room times
 let roomTimes = JSON.parse(
     sessionStorage.getItem("roomTimes")
 ) || {};
@@ -14,7 +15,8 @@ let currentRoom = null;
 let roomStartTime = null;
 let timerInterval = null;
 
-// Format milliseconds into MM:SS.mmm
+
+// FORMAT TIME
 function formatTime(milliseconds) {
     const minutes = Math.floor(milliseconds / 60000);
     const seconds = Math.floor((milliseconds % 60000) / 1000);
@@ -27,10 +29,12 @@ function formatTime(milliseconds) {
     );
 }
 
-// Enter a room
+
+// ENTER A ROOM
 function enterRoom(roomNumber) {
+
+    // Prevent replaying completed rooms
     if (roomTimes[roomNumber] !== undefined) {
-        alert("You have already completed this room!");
         return;
     }
 
@@ -50,26 +54,32 @@ function enterRoom(roomNumber) {
     document.getElementById("room-content").innerHTML =
         "<p>Your challenge will appear here.</p>";
 
-    document.getElementById("complete-button").classList.remove("hidden");
+    document.getElementById("room-timer").textContent =
+        "00:00.000";
 
-    // Start the stopwatch
+    // Start stopwatch
     clearInterval(timerInterval);
 
     timerInterval = setInterval(() => {
+
         const elapsed = Date.now() - roomStartTime;
 
         document.getElementById("room-timer").textContent =
             formatTime(elapsed);
+
     }, 30);
 }
 
-// Complete current room
+
+// COMPLETE A ROOM
+// Each actual game will call this function when solved.
 function completeRoom() {
+
     if (currentRoom === null) return;
 
     const elapsed = Date.now() - roomStartTime;
 
-    // Save the room time
+    // Save room time
     roomTimes[currentRoom] = elapsed;
 
     sessionStorage.setItem(
@@ -82,17 +92,13 @@ function completeRoom() {
     currentRoom = null;
 
     updateMenu();
-
-    // Check whether all rooms are complete
-    if (Object.keys(roomTimes).length === 4) {
-        showResults();
-    } else {
-        returnToMenu();
-    }
+    returnToMenu();
 }
 
-// Return to room selection
+
+// RETURN TO MENU
 function returnToMenu() {
+
     clearInterval(timerInterval);
 
     document.getElementById("room-screen").classList.add("hidden");
@@ -102,37 +108,61 @@ function returnToMenu() {
     updateMenu();
 }
 
-// Update room completion statuses and total time
+
+// UPDATE MENU AND ESCAPE BUTTON
 function updateMenu() {
+
     let totalTime = 0;
 
     for (let i = 1; i <= 4; i++) {
+
         const status = document.getElementById("status-" + i);
-        const button = document.querySelector(
-            `.room-button[onclick="enterRoom(${i})"]`
-        );
+        const button = document.getElementById("room-button-" + i);
 
         if (roomTimes[i] !== undefined) {
+
             status.textContent = formatTime(roomTimes[i]);
             status.classList.add("completed");
             button.disabled = true;
+
         } else {
+
             status.textContent = "NOT STARTED";
             status.classList.remove("completed");
             button.disabled = false;
+
         }
     }
 
+    // Calculate overall time
     Object.values(roomTimes).forEach(time => {
         totalTime += time;
     });
 
     document.getElementById("total-time").textContent =
         formatTime(totalTime);
+
+    // Check if every room is complete
+    const allComplete = [1, 2, 3, 4].every(
+        room => roomTimes[room] !== undefined
+    );
+
+    // Unlock ESCAPE
+    document.getElementById("escape-button").disabled =
+        !allComplete;
 }
 
-// Show final results
+
+// SHOW FINAL RESULTS
 function showResults() {
+
+    const allComplete = [1, 2, 3, 4].every(
+        room => roomTimes[room] !== undefined
+    );
+
+    // Do not allow escape until all rooms are complete
+    if (!allComplete) return;
+
     document.getElementById("menu-screen").classList.add("hidden");
     document.getElementById("room-screen").classList.add("hidden");
     document.getElementById("results-screen").classList.remove("hidden");
@@ -144,7 +174,9 @@ function showResults() {
     let totalTime = 0;
 
     for (let i = 1; i <= 4; i++) {
+
         const time = roomTimes[i];
+
         totalTime += time;
 
         resultsList.innerHTML += `
@@ -159,22 +191,24 @@ function showResults() {
         formatTime(totalTime);
 }
 
-// Instructions popup
+
+// INSTRUCTIONS POPUP
 document.getElementById("instructions-button")
     .addEventListener("click", () => {
+
         document.getElementById("instructions-modal")
             .classList.remove("hidden");
+
     });
 
 document.getElementById("close-instructions")
     .addEventListener("click", () => {
+
         document.getElementById("instructions-modal")
             .classList.add("hidden");
+
     });
 
-// Load saved progress when the page opens
-updateMenu();
 
-if (Object.keys(roomTimes).length === 4) {
-    showResults();
-}
+// INITIALIZE MENU
+updateMenu();
