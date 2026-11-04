@@ -1,4 +1,3 @@
-
 * {
     margin: 0;
     padding: 0;
@@ -449,6 +448,117 @@ button:hover:not(:disabled) {
     margin-top: 10px;
 }
 
+/* ==========================================
+   SIMON SAYS GAME
+========================================== */
+
+.simon-panel {
+    max-width: 560px;
+    margin: 0 auto;
+}
+
+.simon-round {
+    color: #a4d65e;
+    font-size: 16px;
+    font-weight: bold;
+    letter-spacing: 3px;
+    margin-bottom: 15px;
+}
+
+.simon-instructions {
+    color: #b5c0b8;
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+.simon-status {
+    min-height: 28px;
+    color: #a4d65e;
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    margin: 20px 0;
+}
+
+.simon-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    max-width: 430px;
+    margin: 25px auto;
+}
+
+.simon-button {
+    min-width: 0;
+    min-height: 145px;
+    padding: 15px;
+    border: 3px solid transparent;
+    border-radius: 10px;
+    color: white;
+    font-size: clamp(17px, 3vw, 23px);
+    font-weight: 900;
+    letter-spacing: 2px;
+    opacity: 0.85;
+    transition: filter 0.15s, transform 0.15s, box-shadow 0.15s;
+}
+
+.simon-button:disabled {
+    cursor: default;
+    opacity: 0.85;
+}
+
+.simon-button[data-action="CUT"] {
+    background: #236b49;
+    border-color: #3b9d6b;
+}
+
+.simon-button[data-action="DUMP"] {
+    background: #245b83;
+    border-color: #448bc0;
+}
+
+.simon-button[data-action="SWING"] {
+    background: #86602a;
+    border-color: #c99748;
+}
+
+.simon-button[data-action="HUCK"] {
+    background: #713b42;
+    border-color: #b85d68;
+}
+
+.simon-button.lit {
+    opacity: 1;
+    filter: brightness(1.8);
+    transform: scale(1.04);
+    box-shadow: 0 0 28px rgba(255, 255, 255, 0.3);
+}
+
+.simon-progress {
+    color: #829083;
+    font-size: 13px;
+    letter-spacing: 1px;
+    margin: 12px 0;
+}
+
+.simon-progress strong {
+    color: #a4d65e;
+}
+
+.simon-start {
+    display: block;
+    width: 100%;
+    max-width: 240px;
+    margin: 25px auto 0;
+}
+
+.simon-start:disabled {
+    background: #344538;
+    color: #829083;
+    cursor: not-allowed;
+}
+
 /* GENERAL */
 
 .hidden {
@@ -475,5 +585,14 @@ button:hover:not(:disabled) {
 
     h1 {
         letter-spacing: -2px;
+    }
+
+    .simon-grid {
+        gap: 9px;
+    }
+
+    .simon-button {
+        min-height: 115px;
+        border-radius: 7px;
     }
 }
