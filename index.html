@@ -10,75 +10,136 @@
 
 <body>
 
-    <main class="menu-container">
+    <main class="menu-container" id="menu-screen">
 
         <div class="top-label">ULTIMATE FRISBEE ESCAPE ROOM</div>
 
         <h1>THE ULTIMATE<br><span>CHALLENGE</span></h1>
 
         <p class="subtitle">
-            Four rooms. Four challenges. One way out.
+            Four rooms. Four challenges. One ultimate time.
         </p>
 
         <div class="divider"></div>
 
         <p class="story">
-            Your team has been locked inside the ultimate escape room.
-            To make it out, you'll need to put your knowledge, memory,
-            and teamwork to the test.
+            Complete all four challenges as quickly as possible.
+            Your time in each room will be recorded and combined
+            to calculate your final time.
         </p>
 
         <div class="room-preview">
-            <div class="room">
+
+            <button class="room-button" onclick="enterRoom(1)">
                 <span class="room-number">01</span>
-                <span>DISC MEMORY</span>
-            </div>
-            <div class="room">
-                <span class="room-number">02</span>
-                <span>SIMON SAYS</span>
-            </div>
-            <div class="room">
-                <span class="room-number">03</span>
-                <span>TEAM CONNECTIONS</span>
-            </div>
-            <div class="room">
-                <span class="room-number">04</span>
-                <span>THE CHASE</span>
-            </div>
-        </div>
-
-        <div class="button-container">
-            <button id="start-button">START GAME</button>
-            <button id="instructions-button" class="secondary-button">
-                HOW TO PLAY
+                <span class="room-name">DISC MEMORY</span>
+                <span class="room-status" id="status-1">NOT STARTED</span>
             </button>
+
+            <button class="room-button" onclick="enterRoom(2)">
+                <span class="room-number">02</span>
+                <span class="room-name">SIMON SAYS</span>
+                <span class="room-status" id="status-2">NOT STARTED</span>
+            </button>
+
+            <button class="room-button" onclick="enterRoom(3)">
+                <span class="room-number">03</span>
+                <span class="room-name">TEAM CONNECTIONS</span>
+                <span class="room-status" id="status-3">NOT STARTED</span>
+            </button>
+
+            <button class="room-button" onclick="enterRoom(4)">
+                <span class="room-number">04</span>
+                <span class="room-name">THE CHASE</span>
+                <span class="room-status" id="status-4">NOT STARTED</span>
+            </button>
+
         </div>
 
-        <p class="footer-text">THE CLOCK STARTS WHEN YOU DO.</p>
+        <div class="total-time">
+            <span>OVERALL TIME</span>
+            <strong id="total-time">00:00.000</strong>
+        </div>
+
+        <button id="instructions-button" class="secondary-button">
+            HOW TO PLAY
+        </button>
+
+        <p class="footer-text">YOUR TIME STARTS WHEN YOU ENTER A ROOM.</p>
 
     </main>
+
+    <!-- Room screen -->
+    <section id="room-screen" class="hidden">
+
+        <button class="back-button" onclick="returnToMenu()">
+            ← BACK TO ROOMS
+        </button>
+
+        <div class="room-heading">
+            <p id="room-label">ROOM 01</p>
+            <h1 id="room-title">DISC MEMORY</h1>
+        </div>
+
+        <div class="timer-display" id="room-timer">
+            00:00.000
+        </div>
+
+        <div id="room-content">
+            <p>Your challenge will appear here.</p>
+        </div>
+
+        <button id="complete-button" onclick="completeRoom()">
+            COMPLETE ROOM
+        </button>
+
+    </section>
+
+    <!-- Final results screen -->
+    <section id="results-screen" class="hidden">
+
+        <div class="top-label">MISSION ACCOMPLISHED</div>
+
+        <h1>CHALLENGE<br><span>COMPLETE</span></h1>
+
+        <p class="subtitle">Here are your final results.</p>
+
+        <div class="results-list" id="results-list"></div>
+
+        <div class="final-time">
+            <p>YOUR FINAL TIME</p>
+            <strong id="final-time">00:00.000</strong>
+        </div>
+
+        <button onclick="window.location.href='YOUR_GOOGLE_FORM_URL'">
+            SUBMIT RESULTS
+        </button>
+
+    </section>
 
     <!-- Instructions popup -->
     <div id="instructions-modal" class="modal hidden">
         <div class="modal-content">
             <h2>HOW TO PLAY</h2>
+
             <p>
-                Complete all four rooms before the overall timer reaches
-                zero. Each room has its own challenge and countdown.
+                Select any of the four rooms to begin its challenge.
+                Your timer starts as soon as you enter.
             </p>
+
             <p>
-                Solve the puzzles, earn your room codes, and make it
-                to the final escape.
+                Complete the challenge to stop your timer.
+                Your time will be saved automatically.
             </p>
+
+            <p>
+                Finish all four rooms to see your combined time.
+                The faster you finish, the better!
+            </p>
+
             <button id="close-instructions">GOT IT</button>
         </div>
     </div>
-
-    <!-- Game screen placeholder -->
-    <section id="game-screen" class="hidden">
-        <h1>ROOM 01: DISC MEMORY</h1>
-        <p>Your first challenge begins here...</p>
-    </section>
 
     <script src="script.js"></script>
 
