@@ -1,3 +1,6 @@
+// ==========================================
+// GENERAL GAME SETUP
+// ==========================================
 
 const roomNames = {
     1: "DISC MEMORY",
@@ -6,57 +9,43 @@ const roomNames = {
     4: "THE CHASE"
 };
 
-// Load saved room times
-let roomTimes = JSON.parse(
-    sessionStorage.getItem("roomTimes")
-) || {};
+let roomTimes = JSON.parse(sessionStorage.getItem("roomTimes")) || {};
 
 let currentRoom = null;
 let roomStartTime = null;
 let timerInterval = null;
 
-
-// FORMAT TIME
-function formatTime(milliseconds) {
-    const minutes = Math.floor(milliseconds / 60000);
-    const seconds = Math.floor((milliseconds % 60000) / 1000);
-    const ms = Math.floor(milliseconds % 1000);
+function formatTime(ms) {
+    const minutes = Math.floor(ms / 60000);
+    const seconds = Math.floor((ms % 60000) / 1000);
+    const milliseconds = Math.floor(ms % 1000);
 
     return (
         String(minutes).padStart(2, "0") + ":" +
         String(seconds).padStart(2, "0") + "." +
-        String(ms).padStart(3, "0")
+        String(milliseconds).padStart(3, "0")
     );
 }
 
-
-// SHUFFLE ARRAY
 function shuffleArray(array) {
     const shuffled = [...array];
 
     for (let i = shuffled.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-
-        [shuffled[i], shuffled[j]] =
-            [shuffled[j], shuffled[i]];
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
 
     return shuffled;
 }
 
 
-// ENTER A ROOM
+// ==========================================
+// ENTERING AND LEAVING ROOMS
+// ==========================================
+
 function enterRoom(roomNumber) {
-
-    // Prevent replaying completed rooms
-    if (roomTimes[roomNumber] !== undefined) {
-        return;
-    }
-
-    // Don't allow switching rooms during an active challenge
-    if (currentRoom !== null) {
-        return;
-    }
+    if (roomTimes[roomNumber] !== undefined) return;
+    if (currentRoom !== null) return;
 
     currentRoom = roomNumber;
     roomStartTime = Date.now();
@@ -65,41 +54,68 @@ function enterRoom(roomNumber) {
     document.getElementById("results-screen").classList.add("hidden");
     document.getElementById("room-screen").classList.remove("hidden");
 
-    document.getElementById("room-label").textContent =
-        "ROOM " + String(roomNumber).padStart(2, "0");
-
     document.getElementById("room-title").textContent =
-        roomNames[roomNumber];
+        "ROOM 0" + roomNumber + ": " + roomNames[roomNumber];
 
-    document.getElementById("room-timer").textContent =
-        "00:00.000";
+    document.getElementById("room-subtitle").textContent =
+        "Complete the challenge to move forward.";
 
-    // Load the correct game
+    document.getElementById("room-timer").textContent = "00:00.000";
+
     if (roomNumber === 1) {
         initializeDiscMemory();
+    } else if (roomNumber === 2) {
+        initializeSimonSays();
     } else {
         document.getElementById("room-content").innerHTML =
-            "<p>This challenge is coming soon!</p>";
+            "<h2>CHALLENGE COMING SOON</h2>";
     }
-
-    // Start stopwatch
-    clearInterval(timerInterval);
 
     timerInterval = setInterval(() => {
         const elapsed = Date.now() - roomStartTime;
-
         document.getElementById("room-timer").textContent =
             formatTime(elapsed);
+    }, 20);
+}
 
-    }, 30);
+
+function completeRoom() {
+    if (currentRoom === null) return;
+
+    const elapsed = Date.now() - roomStartTime;
+
+    roomTimes[currentRoom] = elapsed;
+    sessionStorage.setItem("roomTimes", JSON.stringify(roomTimes));
+
+    clearInterval(timerInterval);
+    timerInterval = null;
+
+    currentRoom = null;
+    roomStartTime = null;
+
+    updateMenu();
+    returnToMenu();
+}
+
+
+function returnToMenu() {
+    if (currentRoom !== null) {
+        alert("Finish the challenge before returning to the menu!");
+        return;
+    }
+
+    document.getElementById("room-screen").classList.add("hidden");
+    document.getElementById("results-screen").classList.add("hidden");
+    document.getElementById("menu-screen").classList.remove("hidden");
 }
 
 
 // ==========================================
-// ROOM 1: DISC MEMORY
+// ROOM 01: DISC MEMORY
 // ==========================================
 
 function initializeDiscMemory() {
+    const roomContent = document.getElementById("room-content");
 
     const words = [
         "HANDLER",
@@ -112,331 +128,416 @@ function initializeDiscMemory() {
         "BOX"
     ];
 
-    // Create two copies of every word
-    const cards = shuffleArray([...words, ...words]);
+    let cards = shuffleArray([...words, ...words]);
 
-    let firstCard = null;
-    let secondCard = null;
-
-    let lockBoard = false;
-    let matches = 0;
+    let flippedCards = [];
+    let matchedPairs = 0;
     let moves = 0;
+    let lockBoard = false;
 
-    const roomContent = document.getElementById("room-content");
-
-    // Create game layout
     roomContent.innerHTML = `
-        <p class="memory-instructions">
-            Turn over two boxes at a time.
-            Find all eight matching pairs to escape the room!
-        </p>
+        <div class="memory-instructions">
+            Turn over the discs and match all eight pairs.
+        </div>
 
         <div class="memory-stats">
-            <span>MATCHES: <span id="match-count">0 / 8</span></span>
-            <span>MOVES: <span id="move-count">0</span></span>
+            <div>PAIRS: <strong id="memory-pairs">0 / 8</strong></div>
+            <div>MOVES: <strong id="memory-moves">0</strong></div>
         </div>
 
         <div class="memory-grid" id="memory-grid"></div>
     `;
 
-    const memoryGrid = document.getElementById("memory-grid");
+    const grid = document.getElementById("memory-grid");
 
-    // Generate all 16 cards
-    cards.forEach((word, index) => {
-
+    cards.forEach((word) => {
         const card = document.createElement("button");
 
         card.className = "memory-card";
+        card.textContent = "?";
         card.dataset.word = word;
 
-        card.innerHTML = `
-            <span class="card-back">?</span>
-            <span class="card-word">${word}</span>
-        `;
-
         card.addEventListener("click", () => {
-            flipCard(card);
+            if (lockBoard) return;
+            if (card.classList.contains("matched")) return;
+            if (card.classList.contains("flipped")) return;
+
+            card.classList.add("flipped");
+            card.textContent = word;
+
+            flippedCards.push(card);
+
+            if (flippedCards.length === 2) {
+                moves++;
+                document.getElementById("memory-moves").textContent = moves;
+
+                const [first, second] = flippedCards;
+
+                if (first.dataset.word === second.dataset.word) {
+                    first.classList.add("matched");
+                    second.classList.add("matched");
+
+                    first.disabled = true;
+                    second.disabled = true;
+
+                    matchedPairs++;
+                    document.getElementById("memory-pairs").textContent =
+                        matchedPairs + " / 8";
+
+                    flippedCards = [];
+
+                    if (matchedPairs === 8) {
+                        roomContent.innerHTML = `
+                            <h2 class="memory-complete">
+                                ROOM 01 COMPLETE!
+                            </h2>
+                            <p>All eight pairs matched.</p>
+                        `;
+
+                        setTimeout(completeRoom, 700);
+                    }
+                } else {
+                    lockBoard = true;
+
+                    setTimeout(() => {
+                        first.classList.remove("flipped");
+                        second.classList.remove("flipped");
+
+                        first.textContent = "?";
+                        second.textContent = "?";
+
+                        flippedCards = [];
+                        lockBoard = false;
+                    }, 800);
+                }
+            }
         });
 
-        memoryGrid.appendChild(card);
+        grid.appendChild(card);
+    });
+}
+
+
+// ==========================================
+// ROOM 02: SIMON SAYS
+// ==========================================
+
+function initializeSimonSays() {
+    const roomContent = document.getElementById("room-content");
+
+    const actions = ["CUT", "DUMP", "SWING", "HUCK"];
+
+    let sequence = [];
+    let currentRound = 1;
+    let playerPosition = 0;
+    let mistakes = 0;
+    let acceptingInput = false;
+    let playbackTimeouts = [];
+
+    roomContent.innerHTML = `
+        <div class="simon-panel">
+
+            <div class="simon-round" id="simon-round">
+                ROUND 1 / 7
+            </div>
+
+            <p class="simon-instructions">
+                Watch the sequence carefully.
+                Then repeat it in the exact same order.
+                Each round adds one new action.
+            </p>
+
+            <div class="simon-status" id="simon-status">
+                Press START to begin.
+            </div>
+
+            <div class="simon-grid">
+                <button class="simon-button"
+                    data-action="CUT" disabled>CUT</button>
+
+                <button class="simon-button"
+                    data-action="DUMP" disabled>DUMP</button>
+
+                <button class="simon-button"
+                    data-action="SWING" disabled>SWING</button>
+
+                <button class="simon-button"
+                    data-action="HUCK" disabled>HUCK</button>
+            </div>
+
+            <div class="simon-progress">
+                SEQUENCE: <strong id="simon-progress">0 / 1</strong>
+            </div>
+
+            <p class="simon-progress">
+                MISTAKES: <strong id="simon-mistakes">0</strong>
+            </p>
+
+            <button class="simon-start" id="simon-start">
+                START
+            </button>
+
+        </div>
+    `;
+
+    const buttons = [...roomContent.querySelectorAll(".simon-button")];
+    const startButton = document.getElementById("simon-start");
+
+    const status = document.getElementById("simon-status");
+    const roundDisplay = document.getElementById("simon-round");
+    const progressDisplay = document.getElementById("simon-progress");
+    const mistakesDisplay = document.getElementById("simon-mistakes");
+
+    // Add one new random action to the sequence.
+    function addToSequence() {
+        const randomAction =
+            actions[Math.floor(Math.random() * actions.length)];
+
+        sequence.push(randomAction);
+    }
+
+    // Turn off all buttons and clear any previous flashes.
+    function clearLights() {
+        buttons.forEach(button => button.classList.remove("lit"));
+    }
+
+    // Cancel any pending playback animations.
+    function clearPlayback() {
+        playbackTimeouts.forEach(timeout => clearTimeout(timeout));
+        playbackTimeouts = [];
+        clearLights();
+    }
+
+    // Flash a specific action.
+    function flashAction(action, duration) {
+        const button = buttons.find(
+            button => button.dataset.action === action
+        );
+
+        if (!button) return;
+
+        button.classList.add("lit");
+
+        const timeout = setTimeout(() => {
+            button.classList.remove("lit");
+        }, duration);
+
+        playbackTimeouts.push(timeout);
+    }
+
+    // Play the full sequence for the current round.
+    function playSequence() {
+        acceptingInput = false;
+        playerPosition = 0;
+
+        buttons.forEach(button => button.disabled = true);
+
+        startButton.disabled = true;
+        startButton.textContent = "WATCH";
+
+        status.textContent = "WATCH THE SEQUENCE...";
+        progressDisplay.textContent = "0 / " + sequence.length;
+
+        clearPlayback();
+
+        const flashDuration = Math.max(260, 650 - currentRound * 45);
+        const gapDuration = Math.max(140, 260 - currentRound * 15);
+        const stepDuration = flashDuration + gapDuration;
+
+        sequence.forEach((action, index) => {
+            const timeout = setTimeout(() => {
+                flashAction(action, flashDuration);
+            }, 500 + index * stepDuration);
+
+            playbackTimeouts.push(timeout);
+        });
+
+        const finishTimeout = setTimeout(() => {
+            clearLights();
+
+            acceptingInput = true;
+
+            buttons.forEach(button => button.disabled = false);
+
+            startButton.disabled = false;
+            startButton.textContent = "REPLAY SEQUENCE";
+
+            status.textContent = "YOUR TURN! REPEAT THE SEQUENCE.";
+        }, 500 + sequence.length * stepDuration);
+
+        playbackTimeouts.push(finishTimeout);
+    }
+
+    // Handle the player's button selection.
+    function handlePlayerInput(action) {
+        if (!acceptingInput) return;
+
+        acceptingInput = false;
+
+        flashAction(action, 180);
+
+        if (action === sequence[playerPosition]) {
+            playerPosition++;
+
+            progressDisplay.textContent =
+                playerPosition + " / " + sequence.length;
+
+            if (playerPosition === sequence.length) {
+                buttons.forEach(button => button.disabled = true);
+                startButton.disabled = true;
+
+                if (currentRound === 7) {
+                    status.textContent = "ALL SEVEN ROUNDS COMPLETE!";
+
+                    roomContent.querySelector(".simon-panel").innerHTML = `
+                        <h2 class="memory-complete">
+                            ROOM 02 COMPLETE!
+                        </h2>
+                        <p>You successfully completed all seven rounds.</p>
+                    `;
+
+                    setTimeout(completeRoom, 700);
+                    return;
+                }
+
+                status.textContent = "ROUND COMPLETE!";
+
+                currentRound++;
+                addToSequence();
+
+                roundDisplay.textContent =
+                    "ROUND " + currentRound + " / 7";
+
+                startButton.textContent = "NEXT ROUND";
+                startButton.disabled = false;
+
+                status.textContent = "GET READY FOR THE NEXT ROUND.";
+                progressDisplay.textContent =
+                    "0 / " + sequence.length;
+
+                startButton.onclick = () => {
+                    startButton.onclick = null;
+                    playSequence();
+                };
+
+                return;
+            }
+
+            // Allow the next selection.
+            acceptingInput = true;
+
+        } else {
+            mistakes++;
+            mistakesDisplay.textContent = mistakes;
+
+            status.textContent = "WRONG ACTION! WATCH AGAIN.";
+
+            buttons.forEach(button => button.disabled = true);
+
+            const retryTimeout = setTimeout(() => {
+                playSequence();
+            }, 900);
+
+            playbackTimeouts.push(retryTimeout);
+        }
+    }
+
+    buttons.forEach(button => {
+        button.addEventListener("click", () => {
+            handlePlayerInput(button.dataset.action);
+        });
     });
 
-
-    // FLIP A CARD
-    function flipCard(card) {
-
-        // Ignore clicks if the board is locked
-        if (lockBoard) return;
-
-        // Ignore already flipped or matched cards
-        if (
-            card.classList.contains("flipped") ||
-            card.classList.contains("matched")
-        ) {
-            return;
+    // Begin the first round.
+    startButton.addEventListener("click", () => {
+        if (sequence.length === 0) {
+            addToSequence();
         }
 
-        card.classList.add("flipped");
-
-        // First card selected
-        if (firstCard === null) {
-            firstCard = card;
-            return;
-        }
-
-        // Second card selected
-        secondCard = card;
-
-        moves++;
-
-        document.getElementById("move-count").textContent =
-            moves;
-
-        checkMatch();
-    }
-
-
-    // CHECK WHETHER TWO CARDS MATCH
-    function checkMatch() {
-
-        const isMatch =
-            firstCard.dataset.word === secondCard.dataset.word;
-
-        if (isMatch) {
-            handleMatch();
-        } else {
-            handleMismatch();
-        }
-    }
-
-
-    // CORRECT MATCH
-    function handleMatch() {
-
-        firstCard.classList.add("matched");
-        secondCard.classList.add("matched");
-
-        firstCard.disabled = true;
-        secondCard.disabled = true;
-
-        matches++;
-
-        document.getElementById("match-count").textContent =
-            matches + " / 8";
-
-        resetTurn();
-
-        // Check whether all eight pairs are matched
-        if (matches === 8) {
-            finishDiscMemory();
-        }
-    }
-
-
-    // INCORRECT MATCH
-    function handleMismatch() {
-
-        lockBoard = true;
-
-        setTimeout(() => {
-
-            firstCard.classList.remove("flipped");
-            secondCard.classList.remove("flipped");
-
-            resetTurn();
-
-        }, 800);
-    }
-
-
-    // RESET TURN
-    function resetTurn() {
-
-        firstCard = null;
-        secondCard = null;
-        lockBoard = false;
-    }
-
-
-    // COMPLETE THE GAME
-    function finishDiscMemory() {
-
-        roomContent.innerHTML = `
-            <div class="memory-complete">
-                <h2>ROOM 01 COMPLETE!</h2>
-                <p>You successfully matched every disc term.</p>
-                <p>Moves: ${moves}</p>
-                <p>Returning to room selection...</p>
-            </div>
-        `;
-
-        // Automatically stop the timer and save the score
-        completeRoom();
-    }
+        playSequence();
+    });
 }
 
 
 // ==========================================
-// COMPLETE A ROOM
-// ==========================================
-
-function completeRoom() {
-
-    if (currentRoom === null) return;
-
-    const elapsed = Date.now() - roomStartTime;
-
-    // Save room time
-    roomTimes[currentRoom] = elapsed;
-
-    sessionStorage.setItem(
-        "roomTimes",
-        JSON.stringify(roomTimes)
-    );
-
-    clearInterval(timerInterval);
-
-    currentRoom = null;
-    roomStartTime = null;
-
-    updateMenu();
-    returnToMenu();
-}
-
-
-// ==========================================
-// RETURN TO MENU
-// ==========================================
-
-function returnToMenu() {
-
-    // Don't allow players to abandon an unfinished challenge
-    if (currentRoom !== null) {
-        alert("Finish the challenge before returning to the menu!");
-        return;
-    }
-
-    clearInterval(timerInterval);
-
-    document.getElementById("room-screen").classList.add("hidden");
-    document.getElementById("results-screen").classList.add("hidden");
-    document.getElementById("menu-screen").classList.remove("hidden");
-
-    updateMenu();
-}
-
-
-// ==========================================
-// UPDATE MENU AND ESCAPE BUTTON
+// MENU AND RESULTS
 // ==========================================
 
 function updateMenu() {
-
     let totalTime = 0;
 
     for (let i = 1; i <= 4; i++) {
-
-        const status = document.getElementById("status-" + i);
         const button = document.getElementById("room-button-" + i);
+        const status = document.getElementById("status-" + i);
 
         if (roomTimes[i] !== undefined) {
-
-            status.textContent = formatTime(roomTimes[i]);
-            status.classList.add("completed");
             button.disabled = true;
-
+            status.textContent = formatTime(roomTimes[i]);
+            totalTime += roomTimes[i];
         } else {
-
-            status.textContent = "NOT STARTED";
-            status.classList.remove("completed");
             button.disabled = false;
-
+            status.textContent = "Not completed";
         }
     }
-
-    // Calculate overall time
-    Object.values(roomTimes).forEach(time => {
-        totalTime += time;
-    });
 
     document.getElementById("total-time").textContent =
         formatTime(totalTime);
 
-    // Check if all rooms are complete
     const allComplete = [1, 2, 3, 4].every(
         room => roomTimes[room] !== undefined
     );
 
-    // Unlock ESCAPE
-    document.getElementById("escape-button").disabled =
-        !allComplete;
+    document.getElementById("escape-button").disabled = !allComplete;
 }
 
 
-// ==========================================
-// SHOW FINAL RESULTS
-// ==========================================
-
 function showResults() {
-
     const allComplete = [1, 2, 3, 4].every(
         room => roomTimes[room] !== undefined
     );
 
     if (!allComplete) return;
 
-    document.getElementById("menu-screen").classList.add("hidden");
-    document.getElementById("room-screen").classList.add("hidden");
-    document.getElementById("results-screen").classList.remove("hidden");
-
-    const resultsList = document.getElementById("results-list");
-
-    resultsList.innerHTML = "";
-
     let totalTime = 0;
+    let resultsHTML = "";
 
     for (let i = 1; i <= 4; i++) {
+        totalTime += roomTimes[i];
 
-        const time = roomTimes[i];
-
-        totalTime += time;
-
-        resultsList.innerHTML += `
+        resultsHTML += `
             <div class="result-row">
-                <span>${roomNames[i]}</span>
-                <strong>${formatTime(time)}</strong>
+                <span>ROOM 0${i}: ${roomNames[i]}</span>
+                <strong>${formatTime(roomTimes[i])}</strong>
             </div>
         `;
     }
 
     document.getElementById("final-time").textContent =
         formatTime(totalTime);
+
+    document.getElementById("results-list").innerHTML = resultsHTML;
+
+    document.getElementById("menu-screen").classList.add("hidden");
+    document.getElementById("room-screen").classList.add("hidden");
+    document.getElementById("results-screen").classList.remove("hidden");
 }
 
 
 // ==========================================
-// INSTRUCTIONS POPUP
+// INSTRUCTIONS
 // ==========================================
 
-document.getElementById("instructions-button")
-    .addEventListener("click", () => {
+function showInstructions() {
+    document.getElementById("instructions-modal").classList.remove("hidden");
+}
 
-        document.getElementById("instructions-modal")
-            .classList.remove("hidden");
-
-    });
-
-document.getElementById("close-instructions")
-    .addEventListener("click", () => {
-
-        document.getElementById("instructions-modal")
-            .classList.add("hidden");
-
-    });
+function hideInstructions() {
+    document.getElementById("instructions-modal").classList.add("hidden");
+}
 
 
 // ==========================================
-// INITIALIZE MENU
+// INITIALIZE
 // ==========================================
 
 updateMenu();
