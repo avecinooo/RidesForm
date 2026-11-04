@@ -448,9 +448,7 @@ button:hover:not(:disabled) {
     margin-top: 10px;
 }
 
-/* ==========================================
-   SIMON SAYS GAME
-========================================== */
+/* SIMON SAYS GAME */
 
 .simon-panel {
     max-width: 560px;
