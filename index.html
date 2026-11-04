@@ -1,63 +1,86 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Great Team Escape</title>
+    <title>The Ultimate Challenge</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-    <main class="container">
+    <main class="menu-container">
 
-        <div class="top-label">
-            VIRGINIA TECH ULTIMATE
-        </div>
+        <div class="top-label">ULTIMATE FRISBEE ESCAPE ROOM</div>
 
-        <h1>THE GREAT<br>TEAM ESCAPE</h1>
+        <h1>THE ULTIMATE<br><span>CHALLENGE</span></h1>
 
         <p class="subtitle">
-            Four rooms. Four puzzles. One escape.
+            Four rooms. Four challenges. One way out.
         </p>
 
-        <div class="mission-box">
-            <h2>MISSION BRIEFING</h2>
+        <div class="divider"></div>
 
-            <p>
-                Your team has been locked out of the tournament
-                transportation system.
-            </p>
+        <p class="story">
+            Your team has been locked inside the ultimate escape room.
+            To make it out, you'll need to put your knowledge, memory,
+            and teamwork to the test.
+        </p>
 
-            <p>
-                Four security systems stand between you and freedom.
-                Solve each puzzle, escape the facility, and prove
-                you're the fastest member of the team.
-            </p>
+        <div class="room-preview">
+            <div class="room">
+                <span class="room-number">01</span>
+                <span>DISC MEMORY</span>
+            </div>
+            <div class="room">
+                <span class="room-number">02</span>
+                <span>SIMON SAYS</span>
+            </div>
+            <div class="room">
+                <span class="room-number">03</span>
+                <span>TEAM CONNECTIONS</span>
+            </div>
+            <div class="room">
+                <span class="room-number">04</span>
+                <span>THE CHASE</span>
+            </div>
         </div>
 
-        <div class="player-entry">
-            <label for="playerName">ENTER YOUR PLAYER NAME</label>
-
-            <input
-                type="text"
-                id="playerName"
-                placeholder="Your name..."
-                maxlength="30"
-            >
-
-            <button onclick="startGame()">
-                ENTER THE FACILITY
+        <div class="button-container">
+            <button id="start-button">START GAME</button>
+            <button id="instructions-button" class="secondary-button">
+                HOW TO PLAY
             </button>
         </div>
 
-        <p class="footer">
-            TEAM OPERATIONS // CLASSIFIED
-        </p>
+        <p class="footer-text">THE CLOCK STARTS WHEN YOU DO.</p>
 
     </main>
 
-    <script src="game.js"></script>
+    <!-- Instructions popup -->
+    <div id="instructions-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>HOW TO PLAY</h2>
+            <p>
+                Complete all four rooms before the overall timer reaches
+                zero. Each room has its own challenge and countdown.
+            </p>
+            <p>
+                Solve the puzzles, earn your room codes, and make it
+                to the final escape.
+            </p>
+            <button id="close-instructions">GOT IT</button>
+        </div>
+    </div>
+
+    <!-- Game screen placeholder -->
+    <section id="game-screen" class="hidden">
+        <h1>ROOM 01: DISC MEMORY</h1>
+        <p>Your first challenge begins here...</p>
+    </section>
+
+    <script src="script.js"></script>
 
 </body>
 </html>
