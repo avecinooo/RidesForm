@@ -454,12 +454,12 @@ function initializeSimonSays() {
         document.getElementById("simon-round").textContent =
             `ROUND ${currentRound} OF 7`;
 
-        // Faster playback, with each round getting progressively quicker
+        // Later rounds play faster
         const flashDuration =
-            Math.max(250, 550 - currentRound * 35);
+            Math.max(260, 650 - currentRound * 45);
 
         const gapDuration =
-            Math.max(100, 200 - currentRound * 10);
+            Math.max(140, 260 - currentRound * 15);
 
         let index = 0;
 
